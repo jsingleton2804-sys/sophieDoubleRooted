@@ -45,12 +45,19 @@
 
           <!-- ── Contact Form ── -->
           <div>
-            <form
-              name="contact"
-              method="POST"
-              action="#"
-              novalidate
-            >
+            <div data-fs-success class="form-success" style="display:none;">
+              <div style="display:flex;gap:12px;margin-bottom:0.75rem;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#5ECAE5;flex-shrink:0;margin-top:3px;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#7AC8A1;flex-shrink:0;margin-top:3px;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#FDB948;flex-shrink:0;margin-top:3px;"></div>
+              </div>
+              <p style="font-weight:700;color:var(--deep-teal);margin-bottom:0.35rem;">Vielen Dank!</p>
+              <p style="color:var(--muted);font-size:0.95rem;">Deine Nachricht ist angekommen. Wir melden uns innerhalb von 1–2 Werktagen bei dir.</p>
+            </div>
+
+            <div data-fs-error class="form-error" style="display:none;"></div>
+
+            <form id="contact-form" novalidate>
               <div class="form-row">
                 <div class="form-group">
                   <label for="first-name">Vorname</label>
@@ -60,8 +67,10 @@
                     name="first_name"
                     placeholder="Dein Vorname"
                     autocomplete="given-name"
+                    data-fs-field
                     required
                   />
+                  <span data-fs-error="first_name" class="field-error"></span>
                 </div>
                 <div class="form-group">
                   <label for="last-name">Nachname</label>
@@ -71,8 +80,10 @@
                     name="last_name"
                     placeholder="Dein Nachname"
                     autocomplete="family-name"
+                    data-fs-field
                     required
                   />
+                  <span data-fs-error="last_name" class="field-error"></span>
                 </div>
               </div>
 
@@ -84,13 +95,15 @@
                   name="email"
                   placeholder="deine@email.de"
                   autocomplete="email"
+                  data-fs-field
                   required
                 />
+                <span data-fs-error="email" class="field-error"></span>
               </div>
 
               <div class="form-group">
                 <label for="subject">Betreff</label>
-                <select id="subject" name="subject">
+                <select id="subject" name="subject" data-fs-field>
                   <option value="" disabled selected>Worum geht es?</option>
                   <option value="sprachbildung">Sprachbildung</option>
                   <option value="kreativitaet">Kreativität &amp; Workshops</option>
@@ -105,11 +118,13 @@
                   id="message"
                   name="message"
                   placeholder="Wie können wir dir helfen? Erzähl uns gerne ein bisschen von dir und deinen Wünschen …"
+                  data-fs-field
                   required
                 ></textarea>
+                <span data-fs-error="message" class="field-error"></span>
               </div>
 
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary" data-fs-submit-btn>
                 Nachricht absenden
               </button>
             </form>
@@ -178,6 +193,12 @@
       </span>
     </div>
   </footer>
+
+  <script>
+    window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+    formspree('initForm', { formElement: '#contact-form', formId: 'xkolwbeq' });
+  </script>
+  <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
 
 </body>
 </html>

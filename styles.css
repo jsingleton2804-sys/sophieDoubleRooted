@@ -478,6 +478,38 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .info-value:hover { color: var(--sky-blue); }
 
+/* ── Form feedback ─────────────────────────────── */
+.form-success {
+  background: #EBF8F2;
+  border: 2px solid var(--mint-green);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.form-error {
+  background: #FEF3F2;
+  border: 2px solid #F97066;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  color: #B42318;
+  font-size: 0.9rem;
+  margin-bottom: 1.75rem;
+}
+
+.field-error {
+  display: block;
+  color: #B42318;
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
+}
+
+[data-fs-submit-btn]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ── Responsive ────────────────────────────────── */
 @media (max-width: 900px) {
   .about-grid,
