@@ -558,20 +558,348 @@ img { max-width: 100%; height: auto; display: block; }
   transform: none;
 }
 
+/* ── Dropdown nav ──────────────────────────────── */
+.nav-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.nav-chevron {
+  font-size: 0.65rem;
+  opacity: 0.65;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.nav-dropdown:hover .nav-chevron,
+.nav-dropdown:focus-within .nav-chevron { transform: rotate(180deg); }
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  background: var(--white);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(14,113,135,0.14), 0 0 0 1px rgba(14,113,135,0.06);
+  padding: 0.5rem;
+  min-width: 230px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s, visibility 0.18s;
+  z-index: 300;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-menu a {
+  display: block !important;
+  padding: 0.65rem 1rem !important;
+  margin: 0 !important;
+  border-radius: 8px;
+  color: var(--dark-teal) !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+  background: transparent !important;
+}
+.nav-dropdown-menu a:hover {
+  background: var(--light-bg) !important;
+  color: var(--deep-teal) !important;
+}
+
+/* ── Welcome / intro section ───────────────────── */
+.welcome-section { background: var(--white); }
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.welcome-text p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 1.1rem;
+}
+
+.welcome-text .lead {
+  font-size: 1.15rem;
+  color: var(--dark-teal);
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.welcome-visual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.welcome-dot {
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+/* ── Über mich teaser (index) ──────────────────── */
+.ueber-mich-teaser { background: var(--light-bg); }
+
+.teaser-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.teaser-photo {
+  width: 100%;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: top center;
+  box-shadow: 0 6px 24px rgba(14,113,135,0.12);
+}
+
+.teaser-text p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Partners section ──────────────────────────── */
+.partners-section { background: var(--white); padding: 4rem 2rem; }
+
+.partners-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.partner-card {
+  background: var(--light-bg);
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  flex: 1;
+  min-width: 220px;
+}
+
+.partner-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--deep-teal);
+  margin-bottom: 0.4rem;
+}
+
+.partner-card p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ── Angebot page ──────────────────────────────── */
+.angebot-nav-bar {
+  background: var(--white);
+  border-bottom: 1px solid rgba(14,113,135,0.08);
+  padding: 0 2rem;
+  position: sticky;
+  top: 72px;
+  z-index: 100;
+}
+
+.angebot-nav-bar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0;
+}
+
+.angebot-nav-bar a {
+  display: inline-block;
+  padding: 1rem 1.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.angebot-nav-bar a:hover { color: var(--deep-teal); border-bottom-color: var(--deep-teal); }
+.angebot-nav-bar a.active { color: var(--deep-teal); border-bottom-color: var(--deep-teal); }
+
+.angebot-section {
+  padding: 5rem 2rem;
+  border-bottom: 1px solid rgba(14,113,135,0.07);
+}
+.angebot-section:last-of-type { border-bottom: none; }
+
+.angebot-section--alt { background: var(--light-bg); }
+
+.angebot-accent-bar {
+  width: 48px;
+  height: 5px;
+  border-radius: 3px;
+  margin-bottom: 1.75rem;
+}
+
+.angebot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+
+.angebot-body p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 1.1rem;
+}
+
+.angebot-lead {
+  font-size: 1.1rem !important;
+  color: var(--dark-teal) !important;
+  font-weight: 600;
+  line-height: 1.65 !important;
+}
+
+.methods-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.method-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  border-left: 4px solid var(--sky-blue);
+}
+
+.method-card h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--deep-teal);
+  margin-bottom: 0.4rem;
+}
+
+.method-card p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 0 !important;
+}
+
+.angebot-cta-box {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 120px;
+}
+
+.angebot-cta-box p {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--deep-teal);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Blog / Wurzelnotiz ────────────────────────── */
+.blog-section { background: var(--white); padding: 5rem 2rem; }
+
+.blog-post { max-width: 720px; }
+
+.blog-post-header { margin-bottom: 2.5rem; }
+
+.blog-tag {
+  display: inline-block;
+  background: var(--light-bg);
+  color: var(--deep-teal);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  margin-bottom: 1rem;
+}
+
+.blog-post-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  color: var(--deep-teal);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+.blog-date {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.blog-divider {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--amber);
+  margin: 1.5rem 0 2.5rem;
+}
+
+.blog-body p {
+  color: var(--dark-teal);
+  font-size: 1rem;
+  line-height: 1.9;
+  margin-bottom: 1.5rem;
+}
+.blog-body p:last-child { margin-bottom: 0; }
+
 /* ── Responsive ────────────────────────────────── */
 @media (max-width: 900px) {
   .about-grid,
-  .footer-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .footer-grid,
+  .welcome-grid,
+  .angebot-grid { grid-template-columns: 1fr; gap: 2.5rem; }
   .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
   .contact-info-card { position: static; }
   .dots-composition { max-width: 200px; height: 200px; }
+  .teaser-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .teaser-photo { max-width: 300px; }
+  .angebot-cta-box { position: static; }
+  .methods-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
   .section { padding: 4rem 1.5rem; }
   .hero { padding: 5rem 1.5rem 4rem; }
-  .main-nav a:not(.nav-cta) { display: none; }
+  .main-nav a:not(.nav-cta),
+  .nav-dropdown { display: none; }
   .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
+  .angebot-nav-bar { display: none; }
 }
 
 @media (max-width: 480px) {

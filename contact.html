@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Kontakt aufnehmen mit Double Rooted – Sprachbildung & Kreativität in Am Mellensee." />
+  <meta name="description" content="Kontakt aufnehmen mit Double Rooted – Sprachbildung &amp; Kreativität in Am Mellensee." />
   <title>Kontakt – Double Rooted</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" type="image/svg+xml" href="images/logofiles/favicon.svg" />
@@ -21,8 +21,18 @@
     </a>
     <nav class="main-nav" aria-label="Hauptnavigation">
       <a href="index.html">Home</a>
-      <a href="index.html#angebot">Angebot</a>
-      <a href="index.html#ueber-mich">Über mich</a>
+      <div class="nav-dropdown">
+        <a href="angebot.html" class="nav-dropdown-trigger">
+          Angebot <span class="nav-chevron" aria-hidden="true">▾</span>
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="angebot.html#english-explorers">English Explorers</a>
+          <a href="angebot.html#konversationscoaching">Konversationscoaching</a>
+          <a href="angebot.html#keramik">Keramik bemalen</a>
+        </div>
+      </div>
+      <a href="wurzelnotiz.html">Wurzelnotiz</a>
+      <a href="ueber-mich.html">Über mich</a>
       <a href="contact.html" class="nav-cta active">Kontakt</a>
     </nav>
   </header>
@@ -34,7 +44,7 @@
       <div class="container">
         <span class="section-label">Wir freuen uns von dir zu hören</span>
         <h1>Kontakt aufnehmen</h1>
-        <p>Schreib uns eine Nachricht – wir melden uns so schnell wie möglich bei dir zurück.</p>
+        <p>Schreib mir eine Nachricht – ich melde mich so schnell wie möglich bei dir zurück.</p>
       </div>
     </section>
 
@@ -52,7 +62,7 @@
                 <div style="width:14px;height:14px;border-radius:50%;background:#FDB948;flex-shrink:0;margin-top:3px;"></div>
               </div>
               <p style="font-weight:700;color:var(--deep-teal);margin-bottom:0.35rem;">Vielen Dank!</p>
-              <p style="color:var(--muted);font-size:0.95rem;">Deine Nachricht ist angekommen. Wir melden uns innerhalb von 1–2 Werktagen bei dir.</p>
+              <p style="color:var(--muted);font-size:0.95rem;">Deine Nachricht ist angekommen. Ich melde mich innerhalb von 1–2 Werktagen bei dir.</p>
             </div>
 
             <div id="form-error" class="form-error" style="display:none;"></div>
@@ -99,9 +109,9 @@
                 <label for="subject">Betreff</label>
                 <select id="subject" name="subject">
                   <option value="" disabled selected>Worum geht es?</option>
-                  <option value="sprachbildung">Sprachbildung</option>
-                  <option value="kreativitaet">Kreativität &amp; Workshops</option>
-                  <option value="familie">Familienangebote</option>
+                  <option value="english-explorers">English Explorers</option>
+                  <option value="konversationscoaching">Konversationscoaching</option>
+                  <option value="keramik">Keramik bemalen bei Studio Moki</option>
                   <option value="sonstiges">Sonstiges</option>
                 </select>
               </div>
@@ -111,7 +121,7 @@
                 <textarea
                   id="message"
                   name="message"
-                  placeholder="Wie können wir dir helfen? Erzähl uns gerne ein bisschen von dir und deinen Wünschen …"
+                  placeholder="Wie kann ich dir helfen? Erzähl mir gerne ein bisschen von dir und deinen Wünschen …"
                   required
                 ></textarea>
               </div>
@@ -160,20 +170,22 @@
 
       <div class="footer-brand">
         <img src="images/double-rooted-logo.svg" alt="Double Rooted" class="footer-logo" />
-        <p>Sprachbildung &amp; Kreativität für Kinder, Erwachsene und Familien.</p>
+        <p>Sprachbildung &amp; Kreativität für Kinder, Erwachsene und Familien in Am Mellensee.</p>
       </div>
 
       <nav class="footer-col" aria-label="Footer-Navigation">
         <h4>Navigation</h4>
         <a href="index.html">Home</a>
-        <a href="index.html#angebot">Angebot</a>
-        <a href="index.html#ueber-mich">Über mich</a>
+        <a href="angebot.html">Angebot</a>
+        <a href="wurzelnotiz.html">Wurzelnotiz</a>
+        <a href="ueber-mich.html">Über mich</a>
         <a href="contact.html">Kontakt</a>
       </nav>
 
       <div class="footer-col">
         <h4>Kontakt</h4>
         <a href="mailto:hello@doublerooted.com">hello@doublerooted.com</a>
+        <a href="https://www.instagram.com/double.rooted/" target="_blank" rel="noopener" style="margin-top:0.5rem;">@double.rooted auf Instagram</a>
       </div>
 
     </div>
@@ -187,10 +199,25 @@
   </footer>
 
   <script>
-    const form    = document.getElementById('contact-form');
-    const success = document.getElementById('form-success');
-    const error   = document.getElementById('form-error');
-    const btn     = document.getElementById('submit-btn');
+    // Pre-select Betreff from URL param (e.g. contact.html?subject=english-explorers)
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var subject = params.get('subject');
+      if (subject) {
+        var select = document.getElementById('subject');
+        for (var i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === subject) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    })();
+
+    var form    = document.getElementById('contact-form');
+    var success = document.getElementById('form-success');
+    var error   = document.getElementById('form-error');
+    var btn     = document.getElementById('submit-btn');
 
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -199,7 +226,7 @@
       error.style.display = 'none';
 
       try {
-        const res = await fetch('https://formspree.io/f/xkolwbeq', {
+        var res = await fetch('https://formspree.io/f/xkolwbeq', {
           method: 'POST',
           body: new FormData(form),
           headers: { 'Accept': 'application/json' }
@@ -209,8 +236,8 @@
           form.style.display = 'none';
           success.style.display = 'block';
         } else {
-          const data = await res.json();
-          const msg = data.errors
+          var data = await res.json();
+          var msg = data.errors
             ? data.errors.map(function (e) { return e.message; }).join(' ')
             : 'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
           error.textContent = msg;
