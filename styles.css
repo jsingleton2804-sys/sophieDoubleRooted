@@ -753,6 +753,7 @@ img { max-width: 100%; height: auto; display: block; }
 .angebot-section {
   padding: 5rem 2rem;
   border-bottom: 1px solid rgba(14,113,135,0.07);
+  scroll-margin-top: 130px;
 }
 .angebot-section:last-of-type { border-bottom: none; }
 
