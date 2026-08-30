@@ -1,4 +1,7 @@
-import { EmailMessage } from 'cloudflare:email';
+import { connect } from 'cloudflare:sockets';
+
+const GMAIL_USER = 'hello@doublerooted.com';
+const MAIL_TO    = 'hello@doublerooted.com';
 
 const ALLOWED_ORIGINS = [
   'https://doublerooted.com',
@@ -13,41 +16,29 @@ const SUBJECT_LABELS = {
   'sonstiges':             'Sonstiges',
 };
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
 function escapeHtml(str) {
   return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Encode a string as UTF-8 base64 (handles umlauts etc.)
 function toBase64(str) {
   const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }
 
 function buildRawEmail({ from, to, replyTo, subject, html }) {
-  // RFC 2047 encoded-word for non-ASCII subject
-  const subjectEncoded = `=?UTF-8?B?${toBase64(subject)}?=`;
-  // Base64-encode the HTML body, folded at 76 chars per RFC 2045
-  const htmlBase64 = toBase64(html);
-  const htmlFolded  = htmlBase64.match(/.{1,76}/g).join('\r\n');
-
+  const subjectB64 = `=?UTF-8?B?${toBase64(subject)}?=`;
+  const bodyB64    = toBase64(html).match(/.{1,76}/g).join('\r\n');
   return [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Reply-To: ${replyTo}`,
-    `Subject: ${subjectEncoded}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/html; charset=utf-8',
-    'Content-Transfer-Encoding: base64',
-    '',
-    htmlFolded,
+    `From: ${from}`, `To: ${to}`, `Reply-To: ${replyTo}`,
+    `Subject: ${subjectB64}`,
+    'MIME-Version: 1.0', 'Content-Type: text/html; charset=utf-8',
+    'Content-Transfer-Encoding: base64', '', bodyB64,
   ].join('\r\n');
 }
 
@@ -60,30 +51,108 @@ function corsHeaders(origin) {
   };
 }
 
+// ── SMTP client ────────────────────────────────────────────────────────────
+
+class SmtpClient {
+  constructor() { this.socket = null; this.writer = null; this.reader = null; this.buf = ''; }
+
+  _bind(socket) {
+    if (this.writer) try { this.writer.releaseLock(); } catch {}
+    if (this.reader) try { this.reader.releaseLock(); } catch {}
+    this.socket = socket;
+    this.writer = socket.writable.getWriter();
+    this.reader = socket.readable.getReader();
+  }
+
+  async _readLine() {
+    while (true) {
+      const i = this.buf.indexOf('\n');
+      if (i !== -1) {
+        const line = this.buf.slice(0, i).replace(/\r$/, '');
+        this.buf   = this.buf.slice(i + 1);
+        return line;
+      }
+      const { value, done } = await this.reader.read();
+      if (done) throw new Error('SMTP: connection closed');
+      this.buf += new TextDecoder().decode(value);
+    }
+  }
+
+  async _readResponse() {
+    const lines = [];
+    while (true) {
+      const line = await this._readLine();
+      lines.push(line);
+      if (line.length < 4 || line[3] !== '-') break; // last line has space, not dash
+    }
+    return { code: parseInt(lines[lines.length - 1]), lines };
+  }
+
+  async _send(text) {
+    await this.writer.write(new TextEncoder().encode(text + '\r\n'));
+  }
+
+  // Send optional command, read response, assert expected code
+  async cmd(text, expect) {
+    if (text) await this._send(text);
+    const res = await this._readResponse();
+    if (expect && res.code !== expect) {
+      throw new Error(`SMTP: expected ${expect}, got ${res.code} — ${res.lines.join(' | ')}`);
+    }
+    return res;
+  }
+
+  async upgradeTls() {
+    this.writer.releaseLock();
+    this.reader.releaseLock();
+    this._bind(this.socket.startTls());
+  }
+
+  close() {
+    try { this.writer.releaseLock(); } catch {}
+    try { this.reader.releaseLock(); } catch {}
+    try { this.socket.close(); } catch {}
+  }
+}
+
+async function sendViaGmail(appPassword, { from, to, replyTo, subject, html }) {
+  const client = new SmtpClient();
+  client._bind(connect({ hostname: 'smtp.gmail.com', port: 587 }));
+  try {
+    await client.cmd(null, 220);                         // wait for greeting
+    await client.cmd('EHLO doublerooted.com', 250);      // introduce ourselves
+    await client.cmd('STARTTLS', 220);                   // request TLS upgrade
+    await client.upgradeTls();                           // switch to encrypted
+    await client.cmd('EHLO doublerooted.com', 250);      // re-introduce over TLS
+    await client.cmd('AUTH LOGIN', 334);                 // begin login
+    await client.cmd(btoa(GMAIL_USER), 334);             // username (base64)
+    await client.cmd(btoa(appPassword), 235);            // app password (base64)
+    await client.cmd(`MAIL FROM:<${from}>`, 250);
+    await client.cmd(`RCPT TO:<${to}>`, 250);
+    await client.cmd('DATA', 354);
+    const raw = buildRawEmail({ from: `Double Rooted Kontakt <${from}>`, to, replyTo, subject, html });
+    await client.cmd(raw + '\r\n.', 250);               // body + end-of-data marker
+    await client._send('QUIT');
+  } finally {
+    client.close();
+  }
+}
+
+// ── Request handler ────────────────────────────────────────────────────────
+
 export default {
   async fetch(request, env) {
     const origin  = request.headers.get('Origin') || '';
     const headers = { 'Content-Type': 'application/json', ...corsHeaders(origin) };
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers });
-    }
-
-    if (request.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
-    }
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
+    if (request.method !== 'POST')    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
 
     let formData;
-    try {
-      formData = await request.formData();
-    } catch {
-      return new Response(JSON.stringify({ error: 'Ungültige Formulardaten.' }), { status: 400, headers });
-    }
+    try { formData = await request.formData(); }
+    catch { return new Response(JSON.stringify({ error: 'Ungültige Formulardaten.' }), { status: 400, headers }); }
 
-    // Honeypot — bots fill hidden fields, humans don't
-    if (formData.get('_gotcha')) {
-      return new Response(JSON.stringify({ ok: true }), { headers });
-    }
+    if (formData.get('_gotcha')) return new Response(JSON.stringify({ ok: true }), { headers });
 
     const firstName = formData.get('first_name') || '';
     const lastName  = formData.get('last_name')  || '';
@@ -92,10 +161,7 @@ export default {
     const message   = formData.get('message')     || '';
 
     if (!email || !message) {
-      return new Response(
-        JSON.stringify({ error: 'Bitte fülle alle Pflichtfelder aus.' }),
-        { status: 400, headers }
-      );
+      return new Response(JSON.stringify({ error: 'Bitte fülle alle Pflichtfelder aus.' }), { status: 400, headers });
     }
 
     const subjectLabel = SUBJECT_LABELS[subject] || 'Sonstiges';
@@ -104,20 +170,12 @@ export default {
 <div style="font-family:Arial,sans-serif;max-width:600px;color:#234A52;">
   <h2 style="color:#0E7187;margin-bottom:1.5rem;">Neue Kontaktanfrage – Double Rooted</h2>
   <table style="width:100%;border-collapse:collapse;margin-bottom:1.5rem;">
-    <tr>
-      <td style="padding:8px 0;color:#6B8086;width:120px;vertical-align:top;">Name</td>
-      <td style="padding:8px 0;">${escapeHtml(firstName)} ${escapeHtml(lastName)}</td>
-    </tr>
-    <tr>
-      <td style="padding:8px 0;color:#6B8086;vertical-align:top;">E-Mail</td>
-      <td style="padding:8px 0;">
-        <a href="mailto:${escapeHtml(email)}" style="color:#0E7187;">${escapeHtml(email)}</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:8px 0;color:#6B8086;vertical-align:top;">Betreff</td>
-      <td style="padding:8px 0;">${escapeHtml(subjectLabel)}</td>
-    </tr>
+    <tr><td style="padding:8px 0;color:#6B8086;width:120px;vertical-align:top;">Name</td>
+        <td style="padding:8px 0;">${escapeHtml(firstName)} ${escapeHtml(lastName)}</td></tr>
+    <tr><td style="padding:8px 0;color:#6B8086;vertical-align:top;">E-Mail</td>
+        <td style="padding:8px 0;"><a href="mailto:${escapeHtml(email)}" style="color:#0E7187;">${escapeHtml(email)}</a></td></tr>
+    <tr><td style="padding:8px 0;color:#6B8086;vertical-align:top;">Betreff</td>
+        <td style="padding:8px 0;">${escapeHtml(subjectLabel)}</td></tr>
   </table>
   <hr style="border:none;border-top:1px solid #e0e8ea;margin:0 0 1.5rem;" />
   <p style="line-height:1.8;white-space:pre-wrap;">${escapeHtml(message)}</p>
@@ -129,37 +187,17 @@ export default {
 </div>`;
 
     try {
-      const rawEmail = buildRawEmail({
-        from:    'Double Rooted Kontakt <kontakt@doublerooted.com>',
-        to:      'hello@doublerooted.com',
+      await sendViaGmail(env.GMAIL_APP_PASSWORD, {
+        from:    GMAIL_USER,
+        to:      MAIL_TO,
         replyTo: email,
         subject: `Neue Anfrage: ${subjectLabel} – ${firstName} ${lastName}`,
         html,
       });
-
-      const encoded = new TextEncoder().encode(rawEmail);
-      const stream  = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoded);
-          controller.close();
-        },
-      });
-
-      const emailMessage = new EmailMessage(
-        'kontakt@doublerooted.com',
-        'hello@doublerooted.com',
-        stream
-      );
-
-      await env.SEND_EMAIL.send(emailMessage);
-
       return new Response(JSON.stringify({ ok: true }), { headers });
     } catch (err) {
-      console.error('Email send error:', err);
-      return new Response(
-        JSON.stringify({ error: 'Fehler beim Senden. Bitte versuche es erneut.' }),
-        { status: 502, headers }
-      );
+      console.error('SMTP error:', err.message);
+      return new Response(JSON.stringify({ error: 'Fehler beim Senden. Bitte versuche es erneut.' }), { status: 502, headers });
     }
   },
 };
