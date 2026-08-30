@@ -831,7 +831,60 @@ img { max-width: 100%; height: auto; display: block; }
   margin-bottom: 1.25rem;
 }
 
-/* ── Blog / Wurzelnotiz ────────────────────────── */
+/* ── Blog listing ──────────────────────────────── */
+.blog-listing { background: var(--white); padding: 5rem 2rem; }
+
+.blog-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 720px;
+}
+
+.blog-card {
+  background: var(--light-bg);
+  border-radius: 14px;
+  padding: 2rem 2.25rem;
+  border-left: 4px solid var(--amber);
+  transition: box-shadow 0.2s;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+
+.blog-card:hover {
+  box-shadow: 0 6px 24px rgba(14,113,135,0.10);
+}
+
+.blog-card-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.blog-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--deep-teal);
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+.blog-card-excerpt {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+
+.blog-card-read {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--deep-teal);
+}
+
+/* ── Blog post (individual page) ───────────────── */
 .blog-section { background: var(--white); padding: 5rem 2rem; }
 
 .blog-post { max-width: 720px; }
