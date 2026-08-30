@@ -1,0 +1,6 @@
+name = "double-rooted-contact"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# RESEND_API_KEY is stored as a secret (never in this file).
+# Set it once with: npx wrangler secret put RESEND_API_KEY

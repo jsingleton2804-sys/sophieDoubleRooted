@@ -133,6 +133,11 @@
                 ></textarea>
               </div>
 
+              <!-- Honeypot: hidden from users, bots fill it, Worker discards the submission -->
+              <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+                <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" />
+              </div>
+
               <button type="submit" id="submit-btn" class="btn btn-primary">
                 Nachricht absenden
               </button>
@@ -235,7 +240,11 @@
       error.style.display = 'none';
 
       try {
-        var res = await fetch('https://formspree.io/f/xkolwbeq', {
+        // TODO: swap this URL for your Cloudflare Worker URL once deployed
+        // e.g. 'https://double-rooted-contact.YOUR-USERNAME.workers.dev'
+        var ENDPOINT = 'https://formspree.io/f/xkolwbeq';
+
+        var res = await fetch(ENDPOINT, {
           method: 'POST',
           body: new FormData(form),
           headers: { 'Accept': 'application/json' }
@@ -246,9 +255,9 @@
           success.style.display = 'block';
         } else {
           var data = await res.json();
-          var msg = data.errors
+          var msg = data.error || (data.errors
             ? data.errors.map(function (e) { return e.message; }).join(' ')
-            : 'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
+            : 'Etwas ist schiefgelaufen. Bitte versuche es erneut.');
           error.textContent = msg;
           error.style.display = 'block';
           btn.disabled = false;
