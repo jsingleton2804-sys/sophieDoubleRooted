@@ -271,7 +271,30 @@ img { max-width: 100%; height: auto; display: block; }
   display: grid;
   grid-template-columns: 1fr 1.5fr;
   gap: 5rem;
-  align-items: center;
+  align-items: start;
+}
+
+.about-body p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 1.1rem;
+}
+
+.about-lead {
+  font-size: 1.1rem !important;
+  color: var(--dark-teal) !important;
+  font-weight: 600;
+}
+
+.about-signature {
+  font-size: 1.05rem !important;
+  font-weight: 700;
+  color: var(--deep-teal) !important;
+  margin-top: 0.5rem;
+  margin-bottom: 1.75rem !important;
+  padding-top: 1rem;
+  border-top: 2px solid var(--light-blue);
 }
 
 .dots-composition {
