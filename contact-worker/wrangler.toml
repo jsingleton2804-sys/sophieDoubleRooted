@@ -8,4 +8,10 @@ compatibility_date = "2024-09-01"
 #   npx wrangler secret put GOOGLE_CLIENT_SECRET
 #   npx wrangler secret put GOOGLE_REFRESH_TOKEN
 #
+# GMAIL_SENDER is not sensitive and can be a plain variable. It must be the
+# real Workspace mailbox that authorised the refresh token — not the
+# hello@ group, which cannot log in.
+[vars]
+GMAIL_SENDER = "sophie@doublerooted.com"
+#
 # The old GMAIL_APP_PASSWORD secret is no longer used and can be deleted.

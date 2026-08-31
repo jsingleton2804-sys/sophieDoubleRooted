@@ -1,5 +1,7 @@
-const GMAIL_USER = 'hello@doublerooted.com';
-const MAIL_TO    = 'hello@doublerooted.com';
+// hello@ is a Google Group, so it can receive but never authenticate. The
+// sending identity is a real Workspace mailbox, set via the GMAIL_SENDER
+// variable — it must match the account the refresh token was issued for.
+const MAIL_TO = 'hello@doublerooted.com';
 
 const ALLOWED_ORIGINS = [
   'https://doublerooted.com',
@@ -79,6 +81,8 @@ async function getAccessToken(env) {
 }
 
 async function sendViaGmail(env, { from, to, replyTo, subject, html }) {
+  if (!env.GMAIL_SENDER) throw new Error('GMAIL_SENDER is not configured');
+
   const accessToken = await getAccessToken(env);
   const raw = toBase64Url(buildRawEmail({ from, to, replyTo, subject, html }));
 
@@ -149,7 +153,7 @@ export default {
 
     try {
       await sendViaGmail(env, {
-        from:    `Double Rooted Kontakt <${GMAIL_USER}>`,
+        from:    `Double Rooted Kontakt <${env.GMAIL_SENDER}>`,
         to:      MAIL_TO,
         replyTo: email,
         subject: `Neue Anfrage: ${subjectLabel} – ${firstName} ${lastName}`,
