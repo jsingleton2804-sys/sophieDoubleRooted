@@ -1,5 +1,3 @@
-import { connect } from 'cloudflare:sockets';
-
 const GMAIL_USER = 'hello@doublerooted.com';
 const MAIL_TO    = 'hello@doublerooted.com';
 
@@ -31,6 +29,11 @@ function toBase64(str) {
   return btoa(bin);
 }
 
+// Gmail's API wants the message base64url encoded, not plain base64.
+function toBase64Url(str) {
+  return toBase64(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 function buildRawEmail({ from, to, replyTo, subject, html }) {
   const subjectB64 = `=?UTF-8?B?${toBase64(subject)}?=`;
   const bodyB64    = toBase64(html).match(/.{1,76}/g).join('\r\n');
@@ -51,90 +54,48 @@ function corsHeaders(origin) {
   };
 }
 
-// ── SMTP client ────────────────────────────────────────────────────────────
+// ── Gmail API ──────────────────────────────────────────────────────────────
 
-class SmtpClient {
-  constructor() { this.socket = null; this.writer = null; this.reader = null; this.buf = ''; }
+// Exchange the long-lived refresh token for a short-lived access token.
+async function getAccessToken(env) {
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      refresh_token: env.GOOGLE_REFRESH_TOKEN,
+      grant_type:    'refresh_token',
+    }),
+  });
 
-  _bind(socket) {
-    if (this.writer) try { this.writer.releaseLock(); } catch {}
-    if (this.reader) try { this.reader.releaseLock(); } catch {}
-    this.socket = socket;
-    this.writer = socket.writable.getWriter();
-    this.reader = socket.readable.getReader();
+  if (!res.ok) {
+    throw new Error(`Token refresh failed (${res.status}): ${await res.text()}`);
   }
 
-  async _readLine() {
-    while (true) {
-      const i = this.buf.indexOf('\n');
-      if (i !== -1) {
-        const line = this.buf.slice(0, i).replace(/\r$/, '');
-        this.buf   = this.buf.slice(i + 1);
-        return line;
-      }
-      const { value, done } = await this.reader.read();
-      if (done) throw new Error('SMTP: connection closed');
-      this.buf += new TextDecoder().decode(value);
-    }
-  }
-
-  async _readResponse() {
-    const lines = [];
-    while (true) {
-      const line = await this._readLine();
-      lines.push(line);
-      if (line.length < 4 || line[3] !== '-') break; // last line has space, not dash
-    }
-    return { code: parseInt(lines[lines.length - 1]), lines };
-  }
-
-  async _send(text) {
-    await this.writer.write(new TextEncoder().encode(text + '\r\n'));
-  }
-
-  // Send optional command, read response, assert expected code
-  async cmd(text, expect) {
-    if (text) await this._send(text);
-    const res = await this._readResponse();
-    if (expect && res.code !== expect) {
-      throw new Error(`SMTP: expected ${expect}, got ${res.code} — ${res.lines.join(' | ')}`);
-    }
-    return res;
-  }
-
-  async upgradeTls() {
-    this.writer.releaseLock();
-    this.reader.releaseLock();
-    this._bind(this.socket.startTls());
-  }
-
-  close() {
-    try { this.writer.releaseLock(); } catch {}
-    try { this.reader.releaseLock(); } catch {}
-    try { this.socket.close(); } catch {}
-  }
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Token refresh returned no access_token');
+  return data.access_token;
 }
 
-async function sendViaGmail(appPassword, { from, to, replyTo, subject, html }) {
-  const client = new SmtpClient();
-  client._bind(connect({ hostname: 'smtp.gmail.com', port: 587 }));
-  try {
-    await client.cmd(null, 220);                         // wait for greeting
-    await client.cmd('EHLO doublerooted.com', 250);      // introduce ourselves
-    await client.cmd('STARTTLS', 220);                   // request TLS upgrade
-    await client.upgradeTls();                           // switch to encrypted
-    await client.cmd('EHLO doublerooted.com', 250);      // re-introduce over TLS
-    await client.cmd('AUTH LOGIN', 334);                 // begin login
-    await client.cmd(btoa(GMAIL_USER), 334);             // username (base64)
-    await client.cmd(btoa(appPassword), 235);            // app password (base64)
-    await client.cmd(`MAIL FROM:<${from}>`, 250);
-    await client.cmd(`RCPT TO:<${to}>`, 250);
-    await client.cmd('DATA', 354);
-    const raw = buildRawEmail({ from: `Double Rooted Kontakt <${from}>`, to, replyTo, subject, html });
-    await client.cmd(raw + '\r\n.', 250);               // body + end-of-data marker
-    await client._send('QUIT');
-  } finally {
-    client.close();
+async function sendViaGmail(env, { from, to, replyTo, subject, html }) {
+  const accessToken = await getAccessToken(env);
+  const raw = toBase64Url(buildRawEmail({ from, to, replyTo, subject, html }));
+
+  const res = await fetch(
+    'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({ raw }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Gmail send failed (${res.status}): ${await res.text()}`);
   }
 }
 
@@ -187,8 +148,8 @@ export default {
 </div>`;
 
     try {
-      await sendViaGmail(env.GMAIL_APP_PASSWORD, {
-        from:    GMAIL_USER,
+      await sendViaGmail(env, {
+        from:    `Double Rooted Kontakt <${GMAIL_USER}>`,
         to:      MAIL_TO,
         replyTo: email,
         subject: `Neue Anfrage: ${subjectLabel} – ${firstName} ${lastName}`,
@@ -196,7 +157,7 @@ export default {
       });
       return new Response(JSON.stringify({ ok: true }), { headers });
     } catch (err) {
-      console.error('SMTP error:', err.message);
+      console.error('Gmail API error:', err.message);
       return new Response(JSON.stringify({ error: 'Fehler beim Senden. Bitte versuche es erneut.' }), { status: 502, headers });
     }
   },

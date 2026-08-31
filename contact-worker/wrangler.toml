@@ -2,5 +2,10 @@ name = "double-rooted-contact"
 main = "worker.js"
 compatibility_date = "2024-09-01"
 
-# GMAIL_APP_PASSWORD is stored as a secret (never in this file).
-# Set it once with: npx wrangler secret put GMAIL_APP_PASSWORD
+# Secrets are stored in Cloudflare, never in this file. Set them with either
+# the dashboard (Settings → Variables and Secrets) or:
+#   npx wrangler secret put GOOGLE_CLIENT_ID
+#   npx wrangler secret put GOOGLE_CLIENT_SECRET
+#   npx wrangler secret put GOOGLE_REFRESH_TOKEN
+#
+# The old GMAIL_APP_PASSWORD secret is no longer used and can be deleted.
