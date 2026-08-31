@@ -1,7 +1,7 @@
-// hello@ is a Google Group, so it can receive but never authenticate. The
-// sending identity is a real Workspace mailbox, set via the GMAIL_SENDER
-// variable — it must match the account the refresh token was issued for.
-const MAIL_TO = 'hello@doublerooted.com';
+// GMAIL_SENDER is the single real Workspace mailbox — it both authenticates
+// and receives. Addressing the hello@ group instead would hide the message:
+// that mailbox is a member of the group, so Gmail collapses the delivered
+// copy into the Sent one and it never reaches the inbox.
 
 const ALLOWED_ORIGINS = [
   'https://doublerooted.com',
@@ -154,7 +154,7 @@ export default {
     try {
       await sendViaGmail(env, {
         from:    `Double Rooted Kontakt <${env.GMAIL_SENDER}>`,
-        to:      MAIL_TO,
+        to:      env.GMAIL_SENDER,
         replyTo: email,
         subject: `Neue Anfrage: ${subjectLabel} – ${firstName} ${lastName}`,
         html,
