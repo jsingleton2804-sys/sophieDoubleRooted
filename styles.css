@@ -371,7 +371,7 @@ img { max-width: 100%; height: auto; display: block; }
 
 .footer-brand p { color: var(--light-teal); font-size: 0.9rem; line-height: 1.7; max-width: 240px; }
 
-.footer-col h4 {
+.footer-col h3 {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
